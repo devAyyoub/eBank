@@ -90,14 +90,14 @@
       }
     },
     {
-      "username": "BOB",
+      "username": "bob",
       "enabled": true,
       "emailVerified": true,
       "email": "bob@bob.com",
       "firstName": "BOB",
       "lastName": "BOB",
       "credentials": [
-        { "type": "password", "value": "BOB", "temporary": false }
+        { "type": "password", "value": "bob", "temporary": false }
       ],
       "realmRoles": ["USER"],
       "clientRoles": {
