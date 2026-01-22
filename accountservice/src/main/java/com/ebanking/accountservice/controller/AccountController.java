@@ -1,5 +1,6 @@
 package com.ebanking.accountservice.controller;
 
+import com.ebanking.accountservice.dto.BalanceUpdateRequest;
 import com.ebanking.accountservice.model.Account;
 import com.ebanking.accountservice.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,18 @@ public class AccountController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @GetMapping("/number/{accountNumber}")
+    public ResponseEntity<Account> getAccountByAccountNumber(@PathVariable String accountNumber) {
+        return accountService.getAccountByAccountNumber(accountNumber)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Account>> getAccountsByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(accountService.getAccountsByUserId(userId));
+    }
+    
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Account account) {
         Account createdAccount = accountService.createAccount(account);
@@ -41,6 +54,19 @@ public class AccountController {
             return ResponseEntity.ok(updatedAccount);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/{id}/balance")
+    public ResponseEntity<Account> updateBalance(@PathVariable Long id, @RequestBody BalanceUpdateRequest request) {
+        try {
+            Account updatedAccount = accountService.updateBalance(id, request.getAmount(), request.getTransactionType().name());
+            return ResponseEntity.ok(updatedAccount);
+        } catch (RuntimeException e) {
+            if (e.getMessage().equals("Account not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.badRequest().build();
         }
     }
     

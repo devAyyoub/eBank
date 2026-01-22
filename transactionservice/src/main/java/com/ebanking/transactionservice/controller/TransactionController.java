@@ -28,6 +28,11 @@ public class TransactionController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<List<Transaction>> getTransactionsByAccountId(@PathVariable Long accountId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByAccountId(accountId));
+    }
+    
     @PostMapping
     public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
         Transaction createdTransaction = transactionService.createTransaction(transaction);

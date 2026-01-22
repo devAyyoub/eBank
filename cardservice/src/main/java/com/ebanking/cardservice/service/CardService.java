@@ -22,6 +22,31 @@ public class CardService {
         return cardRepository.findById(id);
     }
     
+    public List<Card> getCardsByAccountId(Long accountId) {
+        return cardRepository.findByAccountId(accountId);
+    }
+    
+    public Card activateCard(Long id) {
+        Card card = cardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Card not found"));
+        card.setStatus(Card.CardStatus.ACTIVE);
+        return cardRepository.save(card);
+    }
+    
+    public Card deactivateCard(Long id) {
+        Card card = cardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Card not found"));
+        card.setStatus(Card.CardStatus.INACTIVE);
+        return cardRepository.save(card);
+    }
+    
+    public Card blockCard(Long id) {
+        Card card = cardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Card not found"));
+        card.setStatus(Card.CardStatus.BLOCKED);
+        return cardRepository.save(card);
+    }
+    
     public Card createCard(Card card) {
         return cardRepository.save(card);
     }

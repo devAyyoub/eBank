@@ -22,6 +22,14 @@ public class TransactionService {
         return transactionRepository.findById(id);
     }
     
+    public List<Transaction> getTransactionsByAccountId(Long accountId) {
+        List<Transaction> fromAccount = transactionRepository.findByFromAccountId(accountId);
+        List<Transaction> toAccount = transactionRepository.findByToAccountId(accountId);
+        
+        fromAccount.addAll(toAccount);
+        return fromAccount;
+    }
+    
     public Transaction createTransaction(Transaction transaction) {
         return transactionRepository.save(transaction);
     }
