@@ -16,14 +16,6 @@ public class KafkaConsumerService {
 
     @KafkaListener(topics = "transaction-events", groupId = "notification-service-group")
     public void consumeTransactionEvent(TransactionEvent event) {
-        log.info("=== KAFKA CONSUMER: Received event ===");
-        log.info("Event details: transactionId={}, type={}, amount={}, status={}, userId={}",
-                event != null ? event.getTransactionId() : "null",
-                event != null ? event.getTransactionType() : "null",
-                event != null ? event.getAmount() : "null",
-                event != null ? event.getStatus() : "null",
-                event != null ? event.getUserId() : "null");
-
         if (event == null) {
             log.error("Received null event!");
             return;
@@ -31,24 +23,15 @@ public class KafkaConsumerService {
 
         try {
             if ("COMPLETED".equals(event.getStatus())) {
-                log.info("Processing COMPLETED transaction event: transactionId={}", event.getTransactionId());
                 createNotificationForTransaction(event);
-            } else {
-                log.info(
-                        "Skipping transaction event with status: {} (only COMPLETED transactions create notifications)",
-                        event.getStatus());
             }
         } catch (Exception e) {
-            log.error("ERROR processing transaction event: transactionId={}, error={}, stackTrace:",
+            log.error("Error processing transaction event: transactionId={}, error={}",
                     event.getTransactionId(), e.getMessage(), e);
         }
     }
 
     private void createNotificationForTransaction(TransactionEvent event) {
-        log.info("=== Creating notification ===");
-        log.info("TransactionId: {}, UserId: {}, Status: {}",
-                event.getTransactionId(), event.getUserId(), event.getStatus());
-
         if (event.getUserId() == null) {
             log.error("Cannot create notification: userId is null for transaction: {}", event.getTransactionId());
             return;
@@ -66,7 +49,6 @@ public class KafkaConsumerService {
             notification.setNotificationType(Notification.NotificationType.EMAIL);
             notification.setStatus(Notification.NotificationStatus.PENDING);
             notification.setNotificationId("NOTIF-" + event.getTransactionId());
-
             notification.setRecipient("user-" + event.getUserId() + "@ebank.local");
 
             String message = buildNotificationMessage(event);
@@ -79,29 +61,11 @@ public class KafkaConsumerService {
                     + (event.getTransactionType() != null ? event.getTransactionType() : "Unknown");
             notification.setSubject(subject);
 
-            log.info("Prepared notification - userId: {}, notificationId: {}, message length: {}",
-                    notification.getUserId(), notification.getNotificationId(),
-                    notification.getMessage() != null ? notification.getMessage().length() : 0);
-
-            log.info("Calling notificationService.createNotification()...");
-            Notification savedNotification = notificationService.createNotification(notification);
-
-            if (savedNotification != null && savedNotification.getId() != null) {
-                log.info("=== Notification saved successfully ===");
-                log.info("Saved notification - id: {}, notificationId: {}, userId: {}, message: {}",
-                        savedNotification.getId(),
-                        savedNotification.getNotificationId(),
-                        savedNotification.getUserId(),
-                        savedNotification.getMessage());
-            } else {
-                log.error("=== Notification service returned null or notification without ID ===");
-            }
+            notificationService.createNotification(notification);
+            log.info("Notification created for transaction: {}", event.getTransactionId());
         } catch (Exception e) {
-            log.error("=== ERROR creating notification ===");
-            log.error("TransactionId: {}, UserId: {}, Error: {}",
-                    event.getTransactionId(), event.getUserId(), e.getMessage());
-            log.error("Exception type: {}", e.getClass().getName());
-            log.error("Stack trace:", e);
+            log.error("Error creating notification for transaction: transactionId={}, error={}",
+                    event.getTransactionId(), e.getMessage(), e);
         }
     }
 
