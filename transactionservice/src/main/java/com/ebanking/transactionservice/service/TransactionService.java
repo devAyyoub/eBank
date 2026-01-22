@@ -3,11 +3,13 @@ package com.ebanking.transactionservice.service;
 import com.ebanking.transactionservice.client.AccountServiceClient;
 import com.ebanking.transactionservice.dto.Account;
 import com.ebanking.transactionservice.dto.BalanceUpdateRequest;
+import com.ebanking.transactionservice.dto.TransactionEvent;
 import com.ebanking.transactionservice.model.Transaction;
 import com.ebanking.transactionservice.repository.TransactionRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ public class TransactionService {
     
     private final TransactionRepository transactionRepository;
     private final AccountServiceClient accountServiceClient;
+    private final KafkaProducerService kafkaProducerService;
     
     public List<Transaction> getAllTransactions() {
         return transactionRepository.findAll();
@@ -48,12 +51,23 @@ public class TransactionService {
             updateAccountBalances(savedTransaction);
             
             savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-            return transactionRepository.save(savedTransaction);
+            Transaction completedTransaction = transactionRepository.save(savedTransaction);
             
+            sendTransactionEvent(completedTransaction);
+            
+            return completedTransaction;
+            
+        } catch (DataIntegrityViolationException e) {
+            log.error("Transaction ID already exists: {}", transaction.getTransactionId());
+            throw new RuntimeException("Transaction ID already exists: " + transaction.getTransactionId());
         } catch (Exception e) {
             log.error("Error creating transaction: {}", e.getMessage());
-            transaction.setStatus(Transaction.TransactionStatus.FAILED);
-            Transaction failedTransaction = transactionRepository.save(transaction);
+            try {
+                transaction.setStatus(Transaction.TransactionStatus.FAILED);
+                transactionRepository.save(transaction);
+            } catch (Exception saveException) {
+                log.error("Failed to save transaction with FAILED status: {}", saveException.getMessage());
+            }
             throw new RuntimeException("Transaction failed: " + e.getMessage());
         }
     }
@@ -119,6 +133,25 @@ public class TransactionService {
         } catch (FeignException e) {
             log.error("Error updating account balances: {}", e.getMessage());
             throw new RuntimeException("Error updating account balances: " + e.getMessage(), e);
+        }
+    }
+    
+    private void sendTransactionEvent(Transaction transaction) {
+        try {
+            TransactionEvent event = new TransactionEvent();
+            event.setTransactionId(transaction.getTransactionId());
+            event.setTransactionType(transaction.getTransactionType().name());
+            event.setAmount(transaction.getAmount());
+            event.setCurrency(transaction.getCurrency());
+            event.setDescription(transaction.getDescription());
+            event.setFromAccountId(transaction.getFromAccountId());
+            event.setToAccountId(transaction.getToAccountId());
+            event.setUserId(transaction.getUserId());
+            event.setStatus(transaction.getStatus().name());
+            
+            kafkaProducerService.sendTransactionEvent(event);
+        } catch (Exception e) {
+            log.error("Error sending transaction event: {}", e.getMessage());
         }
     }
     
