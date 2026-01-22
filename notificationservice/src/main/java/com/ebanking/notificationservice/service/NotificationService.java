@@ -24,14 +24,42 @@ public class NotificationService {
     
     public Notification createNotification(Notification notification) {
         if (notification.getType() == null) {
-            notification.setType(Notification.NotificationType.DEFAULT);
+            notification.setType(Notification.NotificationType.EMAIL); // Usar EMAIL como default (CHECK constraint)
         }
         
-        if (notification.getNotificationType() != null) {
+        if (notification.getNotificationType() == null) {
+            notification.setNotificationType(notification.getType() != null 
+                ? notification.getType() 
+                : Notification.NotificationType.EMAIL); // Usar EMAIL como default (CHECK constraint)
+        }
+        
+        if (notification.getType() == null && notification.getNotificationType() != null) {
             notification.setType(notification.getNotificationType());
         }
         
-        return notificationRepository.save(notification);
+        // Asegurar que ambos campos usen valores válidos según el CHECK constraint (EMAIL, SMS, PUSH)
+        if (notification.getType() == Notification.NotificationType.DEFAULT) {
+            notification.setType(Notification.NotificationType.EMAIL);
+        }
+        if (notification.getNotificationType() == Notification.NotificationType.DEFAULT) {
+            notification.setNotificationType(Notification.NotificationType.EMAIL);
+        }
+        
+        if (notification.getStatus() == null) {
+            notification.setStatus(Notification.NotificationStatus.PENDING);
+        }
+        
+        // Establecer recipient si es null (requerido por la base de datos)
+        if (notification.getRecipient() == null || notification.getRecipient().isEmpty()) {
+            if (notification.getUserId() != null) {
+                notification.setRecipient("user-" + notification.getUserId() + "@ebank.local");
+            } else {
+                notification.setRecipient("unknown@ebank.local");
+            }
+        }
+        
+        Notification saved = notificationRepository.save(notification);
+        return saved;
     }
     
     public Notification updateNotification(Long id, Notification notification) {

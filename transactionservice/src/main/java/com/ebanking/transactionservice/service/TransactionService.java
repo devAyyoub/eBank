@@ -13,7 +13,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -138,6 +137,11 @@ public class TransactionService {
     
     private void sendTransactionEvent(Transaction transaction) {
         try {
+            log.info("=== Preparing to send transaction event ===");
+            log.info("Transaction: id={}, transactionId={}, userId={}, status={}, type={}", 
+                transaction.getId(), transaction.getTransactionId(), transaction.getUserId(), 
+                transaction.getStatus(), transaction.getTransactionType());
+            
             TransactionEvent event = new TransactionEvent();
             event.setTransactionId(transaction.getTransactionId());
             event.setTransactionType(transaction.getTransactionType().name());
@@ -149,9 +153,14 @@ public class TransactionService {
             event.setUserId(transaction.getUserId());
             event.setStatus(transaction.getStatus().name());
             
+            log.info("Event created: transactionId={}, userId={}, status={}, type={}, amount={}", 
+                event.getTransactionId(), event.getUserId(), event.getStatus(), 
+                event.getTransactionType(), event.getAmount());
+            
             kafkaProducerService.sendTransactionEvent(event);
+            log.info("Event sent to Kafka producer service");
         } catch (Exception e) {
-            log.error("Error sending transaction event: {}", e.getMessage());
+            log.error("Error sending transaction event: {}", e.getMessage(), e);
         }
     }
     
