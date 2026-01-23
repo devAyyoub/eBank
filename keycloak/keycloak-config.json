@@ -99,14 +99,14 @@
       "credentials": [
         { "type": "password", "value": "BOB", "temporary": false }
       ],
-      "realmRoles": ["USER"],
+      "realmRoles": ["ADMIN", "USER"],
       "clientRoles": {
-        "gateway": ["USER"],
-        "account": ["USER"],
-        "userservice": ["USER"],
-        "cardservice": ["USER"],
-        "notificationservice": ["USER"],
-        "transactionservice": ["USER"]
+        "gateway": ["ADMIN", "USER"],
+        "account": ["ADMIN", "USER"],
+        "userservice": ["ADMIN", "USER"],
+        "cardservice": ["ADMIN", "USER"],
+        "notificationservice": ["ADMIN", "USER"],
+        "transactionservice": ["ADMIN", "USER"]
       }
     },
     {
