@@ -10,7 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./create-databases.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -19,10 +18,39 @@ services:
     networks:
       - ebank-network
 
+  postgres-init:
+    image: postgres:15
+    container_name: ebank-postgres-init
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        until psql -h postgres -U postgres -c 'SELECT 1' >/dev/null 2>&1; do
+          echo 'Waiting for PostgreSQL...'
+          sleep 1
+        done
+        echo 'PostgreSQL is ready, creating databases...'
+        psql -h postgres -U postgres -c 'CREATE DATABASE ebank_users;' || true
+        psql -h postgres -U postgres -c 'CREATE DATABASE ebank_accounts;' || true
+        psql -h postgres -U postgres -c 'CREATE DATABASE ebank_cards;' || true
+        psql -h postgres -U postgres -c 'CREATE DATABASE ebank_notifications;' || true
+        psql -h postgres -U postgres -c 'CREATE DATABASE ebank_transactions;' || true
+        echo 'Databases initialization completed'
+      "
+    networks:
+      - ebank-network
+
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: 00devayyoub/ebank-keycloak:latest
     container_name: ebank-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -98,6 +126,7 @@ services:
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discoveryserver:8761/eureka/
     depends_on:
       - discoveryserver
+    restart: unless-stopped
     networks:
       - ebank-network
 
