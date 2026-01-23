@@ -50,6 +50,7 @@ services:
 
   keycloak:
     image: 00devayyoub/ebank-keycloak:latest
+    platform: linux/arm64
     container_name: ebank-keycloak
     command: start-dev --import-realm
     environment:
@@ -108,6 +109,7 @@ services:
 
   discoveryserver:
     image: 00devayyoub/ebank-discoveryserver:latest
+    platform: linux/arm64
     container_name: ebank-discovery
     ports:
       - "8761:8761"
@@ -119,6 +121,7 @@ services:
   # API Gateway
   gateway:
     image: 00devayyoub/ebank-gateway:latest
+    platform: linux/arm64
     container_name: ebank-gateway
     ports:
       - "8080:8080"
@@ -133,6 +136,7 @@ services:
 
   userservice:
     image: 00devayyoub/ebank-userservice:latest
+    platform: linux/arm64
     container_name: ebank-user-service
     ports:
       - "8081:8081"
@@ -171,6 +175,7 @@ services:
 
   cardservice:
     image: 00devayyoub/ebank-cardservice:latest
+    platform: linux/arm64
     container_name: ebank-card-service
     ports:
       - "8083:8083"
@@ -190,6 +195,7 @@ services:
 
   notificationservice:
     image: 00devayyoub/ebank-notificationservice:latest
+    platform: linux/arm64
     container_name: ebank-notification-service
     ports:
       - "8084:8084"
@@ -209,6 +215,7 @@ services:
 
   transactionservice:
     image: 00devayyoub/ebank-transactionservice:latest
+    platform: linux/arm64
     container_name: ebank-transaction-service
     ports:
       - "8085:8085"
